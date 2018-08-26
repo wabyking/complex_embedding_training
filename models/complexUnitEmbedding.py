@@ -30,13 +30,15 @@ class ComplexUnitEmbedding(BasicModel):
             # Construct the variables for the NCE loss
             self.global_norm = tf.sqrt(tf.reduce_sum(tf.square(self.amplitude_embedding), 1, keepdims=True))
             self.global_normalized_embedding = self.amplitude_embedding / self.global_norm
+            
+            self.embeddings = self.global_normalized_embedding
      
         self.build()
         print("build over with " + self.config["network_type"])
     
     def getEmbedding(self,words):
         phase_part = tf.nn.embedding_lookup(self.phase_embedding, words)
-        amplitude_part = tf.nn.embedding_lookup(self.amplitude_embedding, words)
+        amplitude_part = tf.nn.embedding_lookup(self.global_normalized_embedding, words)
         return amplitude_part,phase_part
     
     def transform(self,amplitude,phase):
@@ -45,8 +47,8 @@ class ComplexUnitEmbedding(BasicModel):
         return cos*amplitude, sin*amplitude      
     
     def outer_product(self,real,imag,weights=None):     #  batch_size * embedding_dim  
-        real_ket, real_bra = tf.expand_dims(real,axis=-1),tf.expand_dims(real,axis=-2)
-        imag_ket, imag_bra = tf.expand_dims(imag,axis=-1),tf.expand_dims(imag,axis=-2)
+        real_bra, real_ket = tf.expand_dims(real,axis=-1),tf.expand_dims(real,axis=-2)
+        imag_bra, imag_ket = tf.expand_dims(imag,axis=-1),tf.expand_dims(imag,axis=-2)
         real_part = tf.matmul(real_bra,real_ket) + tf.matmul(imag_bra,imag_ket)
         imag_part = tf.matmul(real_bra,imag_ket) - tf.matmul(imag_bra,real_ket)         
         return real_part,imag_part  
@@ -78,11 +80,11 @@ class ComplexUnitEmbedding(BasicModel):
         softmax_norm = tf.nn.softmax(norm, 1)
         density_real,density_imag = self.outer_product(real,imag,softmax_norm)
         
-        if weights == None:
-            density_real_mixture, density_imag_mixture = tf.reduce_mean(density_real,axis=1), tf.reduce_mean(density_imag,axis=1)
-        else:
-            expand_norm = tf.expand_dims(tf.expand_dims(softmax_norm,2),3)
-            density_real_mixture, density_imag_mixture =[ tf.reduce_sum( item * expand_norm,1) for item in (density_real,density_imag)]
+#        if weights == None:
+#            density_real_mixture, density_imag_mixture = tf.reduce_mean(density_real,axis=1), tf.reduce_mean(density_imag,axis=1)
+#        else:
+        expand_norm = tf.expand_dims(tf.expand_dims(softmax_norm,2),3)
+        density_real_mixture, density_imag_mixture =[ tf.reduce_sum( item * expand_norm,1) for item in (density_real,density_imag)]
 
         
         with tf.name_scope('loss'):
@@ -114,7 +116,7 @@ class ComplexUnitEmbedding(BasicModel):
             true_real_embedding, true_imag_embedding  = self.transform( true_amplitude_embedding, true_phase_embedding)
             true_real_outer,true_imag_outer = self.outer_product( true_real_embedding, true_imag_embedding)
             
-            true_prob = tf.trace(tf.matmul(density_real_mixture,true_real_outer)) -tf.trace(tf.matmul(density_imag_mixture,true_imag_outer))
+            true_prob = tf.trace(tf.matmul(density_real_mixture,true_real_outer)) + tf.trace(tf.matmul(density_imag_mixture,true_imag_outer))
             # projection-wise multipiltion
 
             true_prob_expand = tf.expand_dims(true_prob,1)

@@ -30,6 +30,8 @@ class RealUnitEmbedding(BasicModel):
             # Construct the variables for the NCE loss
             self.global_norm = tf.sqrt(tf.reduce_sum(tf.square(self.embeddings), 1, keepdims=True))
             self.global_normalized_embedding = self.embeddings / self.global_norm
+            
+            self.embeddings = self.global_normalized_embedding
 
      
         self.build()
