@@ -36,7 +36,11 @@ class DataHelper(object):
 
     
     
-    def generate_batch(self, batch_size, num_skips,skip_window, num_steps=2):
+    def generate_batch(self, batch_size, num_skips,skip_window, num_steps=2, cbow = False):
+        if cbow != False:
+            for batch in self.generate_batch_cbow(batch_size, num_skips,skip_window, num_steps=num_steps):
+                yield batch 
+            return
         x,y=[],[]
         context_candidates = [w for w in range(2 * skip_window + 1) if w != skip_window]
         for xx in range(num_steps):
