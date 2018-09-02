@@ -16,4 +16,5 @@ case study/*
 temp/*
 *.pkl
 .spyproject/*
+*.text
 
