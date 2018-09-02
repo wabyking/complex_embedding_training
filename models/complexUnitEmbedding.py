@@ -46,7 +46,7 @@ class ComplexUnitEmbedding(BasicModel):
         sin = tf.sin(phase)
         return cos*amplitude, sin*amplitude      
     
-    def outer_product(self,real,imag,weights=None):     #  batch_size * embedding_dim  
+    def outer_product(self,real,imag):     #  batch_size * embedding_dim  
         real_bra, real_ket = tf.expand_dims(real,axis=-1),tf.expand_dims(real,axis=-2)
         imag_bra, imag_ket = tf.expand_dims(imag,axis=-1),tf.expand_dims(imag,axis=-2)
         real_part = tf.matmul(real_bra,real_ket) + tf.matmul(imag_bra,imag_ket)
@@ -78,7 +78,7 @@ class ComplexUnitEmbedding(BasicModel):
         
         norm = tf.sqrt(tf.reduce_sum(tf.square(amplitude_part), 2, keepdims=False))
         softmax_norm = tf.nn.softmax(norm, 1)
-        density_real,density_imag = self.outer_product(real,imag,softmax_norm)
+        density_real,density_imag = self.outer_product(real,imag)
         
 #        if weights == None:
 #            density_real_mixture, density_imag_mixture = tf.reduce_mean(density_real,axis=1), tf.reduce_mean(density_imag,axis=1)
@@ -137,11 +137,11 @@ class ComplexUnitEmbedding(BasicModel):
 #        self.normalization_op = tf.assign(self.embeddings,  self.global_normalized_embedding) 
     
 if __name__ == "__main__":        
-    class DottableDict(dict):
-        def __init__(self, *args, **kwargs):
-            dict.__init__(self, *args, **kwargs)
-            self.__dict__ = self 
-    # -*- coding: utf-8 -*-
+#    class DottableDict(dict):
+#        def __init__(self, *args, **kwargs):
+#            dict.__init__(self, *args, **kwargs)
+#            self.__dict__ = self 
+#    # -*- coding: utf-8 -*-
     import tensorflow as tf
     from tensorflow.contrib.tensorboard.plugins import projector
     from tempfile import gettempdir
@@ -155,14 +155,16 @@ if __name__ == "__main__":
     
     params = Params()
     config_file = 'config/complex_cbow_unit.ini'    # define dataset in the config
-    config_file = 'config/real_cbow_unit.ini'    # define dataset in the config
+#    config_file = 'config/real_cbow_unit.ini'    # define dataset in the config
     #config_file = 'config/word2vec.ini'    # define dataset in the config
     params.parse_config(config_file)
-    self = DottableDict()
-    self.config = {}        
+#    self = DottableDict()
+#    self.config = {}        
     for conf in (params,helper):
         for k,v in conf.__dict__.items():
             self.config[k]=v
+    model = models.setup(params,helper)
+    self =model
         
             
                 
